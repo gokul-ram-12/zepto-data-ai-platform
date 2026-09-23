@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+support_assistant/artifacts/chroma/
+analytics/artifacts/*.joblib
+analytics/artifacts/*.png
+analytics/artifacts/*.csv
+analytics/artifacts/*.txt
+data_pipeline/artifacts/*.db
