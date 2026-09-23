@@ -29,6 +29,32 @@ MOCK_LLM=1 uvicorn support_assistant.main:app --host 0.0.0.0 --port 7860
 curl -X POST http://localhost:7860/ask -H 'Content-Type: application/json' -d '{"query":"How much is delivery?"}'
 ```
 
+## Automated verification
+
+The repository includes a rubric-driven integration suite at `tests/integration_test.py`. It checks the repository structure, SQLite schema and conversion rate, SQL and pandas outputs, Titanic data and reports, generated charts, reloadability of the complete model pipeline, all eight support documents, LangGraph routing, the FastAPI response contract, and the required Git merge history.
+
+Run the fast artifact and integration checks with:
+
+```bash
+python tests/integration_test.py
+```
+
+To regenerate all pipelines and then run the checks, use:
+
+```bash
+python tests/integration_test.py --run-pipelines
+```
+
+## Docker Compose
+
+The support assistant can be started with one command. Docker Compose builds the image, installs the dependencies from the consolidated requirements file, sets the graded offline `MOCK_LLM=1` mode, publishes port `7860`, and waits for the OpenAPI health check.
+
+```bash
+docker compose up --build
+```
+
+The API is then available at `http://localhost:7860/ask`. Stop it with `Ctrl+C`, or run `docker compose down` in another terminal.
+
 See the module READMEs for the generated outputs, example calls, and implementation decisions.
 
 ## Design decisions

@@ -1,0 +1,15 @@
+services:
+  support-assistant:
+    build:
+      context: .
+      dockerfile: support_assistant/Dockerfile
+    environment:
+      MOCK_LLM: "1"
+    ports:
+      - "7860:7860"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/openapi.json')"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
