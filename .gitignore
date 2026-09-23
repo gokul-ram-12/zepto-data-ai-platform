@@ -4,8 +4,5 @@ __pycache__/
 .env
 .DS_Store
 support_assistant/artifacts/chroma/
-analytics/artifacts/*.joblib
-analytics/artifacts/*.png
-analytics/artifacts/*.csv
 analytics/artifacts/*.txt
 data_pipeline/artifacts/*.db
