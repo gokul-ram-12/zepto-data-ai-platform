@@ -249,6 +249,50 @@ Submit exactly one public repository link:
 
 <https://github.com/gokul-ram-12/zepto-data-ai-platform>
 
+## 🔎 Support-assistant acceptance evidence
+
+The support-assistant requirements are satisfied by the committed corpus, source code, tests, and recorded outputs below. The eight files in `support_assistant/docs/` are loaded by `load_documents()`, embedded by `Embedder.encode()` using `all-MiniLM-L6-v2`, and stored in the `zepto_policies` ChromaDB collection with `hnsw:space=cosine`. The integration suite verifies that the live collection contains eight documents and that a delivery query returns `doc_01` content.
+
+The actual prompt text is present in `support_assistant/main.py` under `PROMPT_TEMPLATE`. It visibly contains `Role`, `Context`, `Task`, `Format`, `Length`, the negative constraint `Do not answer using information not present in the provided context`, and a delivery-fee few-shot example. The optional `MOCK_LLM=0` path uses this prompt through `generate_real_answer()` and retries validation twice after the first attempt.
+
+With `MOCK_LLM` unset, the keyword heuristic routes the two recorded examples as follows:
+
+| Example query | Route | Retrieval | Expected response evidence |
+|---|---|---:|---|
+| `What is the delivery fee below INR 149?` | `policy_question` → `retrieve_and_answer` | Yes | Starts with `Based on the retrieved context:` and includes `doc_01` |
+| `What is the weather today?` | `general_question` → `direct_answer` | No | `I can only answer questions about Zepto policies right now.` with `sources: []` |
+
+The final full regeneration run produced this verified output:
+
+```text
+Scraped and loaded 100 books
+Analytics complete: 889 cleaned rows
+Support assistant ready
+OpenAPI routes: ['/ask']
+Ran 5 tests
+OK
+```
+
+The API response examples are:
+
+```json
+{
+  "answer": "Based on the retrieved context: Zepto delivers grocery and household essentials...",
+  "sources": ["doc_01", "doc_03", "doc_05"],
+  "confidence": 1.0
+}
+```
+
+```json
+{
+  "answer": "I can only answer questions about Zepto policies right now.",
+  "sources": [],
+  "confidence": 1.0
+}
+```
+
+The rubric states that screenshots, PDFs, presentations, video, and audio are not accepted deliverables. Therefore, verification is intentionally recorded as reproducible text, JSON examples, committed source code, reports, and automated tests rather than screenshot files. The generated analytics charts remain available as supporting artifacts and are not used as substitutes for written interpretation.
+
 ## 📚 Key files
 
 - [Final submission summary](FINAL_SUBMISSION_SUMMARY.md)

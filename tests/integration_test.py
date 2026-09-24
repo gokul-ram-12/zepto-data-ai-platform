@@ -99,14 +99,17 @@ class ZeptoAcceptanceTests(unittest.TestCase):
         source = (self.support_dir / "main.py").read_text(encoding="utf-8")
         for marker in ["PROMPT_TEMPLATE", "Role:", "Context:", "Task:", "Format:", "Length:", "Negative constraint", "Few-shot example", "hnsw:space", "cosine", "StateGraph", "classify_intent", "retrieve_and_answer", "direct_answer", "generate_real_answer", "Corrective instruction", "@app.post(\"/ask\""]:
             self.assertIn(marker, source)
-        os.environ["MOCK_LLM"] = "1"
+        os.environ.pop("MOCK_LLM", None)
         from support_assistant.main import AskRequest, RETRIEVER, ask, generate_real_answer
         if RETRIEVER.collection is not None:
             self.assertEqual((RETRIEVER.collection.metadata or {}).get("hnsw:space"), "cosine")
+            self.assertEqual(RETRIEVER.collection.count(), 8)
         policy = ask(AskRequest(query="What is the delivery fee below INR 149?"))
         general = ask(AskRequest(query="What is the weather today?"))
         self.assertIn("Based on the retrieved context:", policy.answer)
         self.assertTrue(policy.sources)
+        self.assertIn("doc_01", policy.sources)
+        self.assertIn("delivery", policy.answer.lower())
         self.assertEqual(policy.confidence, 1.0)
         self.assertEqual(general.sources, [])
         self.assertEqual(general.confidence, 1.0)
@@ -136,8 +139,8 @@ def main() -> int:
         for command in commands:
             result = run(command)
             print(result.stdout.strip())
-        os.environ["MOCK_LLM"] = "1"
         support_env = os.environ.copy()
+        support_env.pop("MOCK_LLM", None)
         support_env["RUN_EXAMPLES"] = "1"
         result = subprocess.run([sys.executable, "support_assistant/main.py"], cwd=ROOT, text=True, capture_output=True, check=True, env=support_env)
         print(result.stdout.strip())
