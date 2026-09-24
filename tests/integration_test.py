@@ -79,9 +79,9 @@ class ZeptoAcceptanceTests(unittest.TestCase):
         eda_report = (self.analytics_dir / "artifacts" / "eda_report.md").read_text(encoding="utf-8")
         model_report = (self.analytics_dir / "artifacts" / "model_report.md").read_text(encoding="utf-8")
         profile = (self.analytics_dir / "artifacts" / "profile.txt").read_text(encoding="utf-8")
-        for marker in ["IQR outlier counts", "Fare mean", "Correlation interpretation", "Chart interpretations"]:
+        for marker in ["IQR outlier counts", "Fare mean", "Correlation interpretation", "Boolean-mask checks", "Chart interpretations", "Survival by sex and class chart", "Age distribution by class and outcome chart", "Age, fare, sex, and survival chart", "Survival by embarkation and class chart"]:
             self.assertIn(marker, eda_report)
-        for marker in ["Logistic Regression", "Decision Tree", "Random Forest", "Grid search", "OOB score", "MAE", "RMSE", "Adjusted_R2", "Final classifier recommendation"]:
+        for marker in ["Logistic Regression", "Decision Tree", "Random Forest", "Class balance", "not_survived:", "survived:", "Grid search", "OOB score", "MAE", "RMSE", "Adjusted_R2", "Final classifier recommendation"]:
             self.assertIn(marker, model_report)
         for marker in ["INFO", "shape=", "DESCRIBE", "MISSING_PERCENTAGES"]:
             self.assertIn(marker, profile)
@@ -97,10 +97,12 @@ class ZeptoAcceptanceTests(unittest.TestCase):
         self.assertEqual(len(docs), 8)
         self.assertTrue(all(path.read_text(encoding="utf-8").strip() for path in docs))
         source = (self.support_dir / "main.py").read_text(encoding="utf-8")
-        for marker in ["PROMPT_TEMPLATE", "Role:", "Context:", "Task:", "Format:", "Length:", "Negative constraint", "Few-shot example", "StateGraph", "classify_intent", "retrieve_and_answer", "direct_answer", "@app.post(\"/ask\""]:
+        for marker in ["PROMPT_TEMPLATE", "Role:", "Context:", "Task:", "Format:", "Length:", "Negative constraint", "Few-shot example", "hnsw:space", "cosine", "StateGraph", "classify_intent", "retrieve_and_answer", "direct_answer", "generate_real_answer", "Corrective instruction", "@app.post(\"/ask\""]:
             self.assertIn(marker, source)
         os.environ["MOCK_LLM"] = "1"
-        from support_assistant.main import AskRequest, ask
+        from support_assistant.main import AskRequest, RETRIEVER, ask, generate_real_answer
+        if RETRIEVER.collection is not None:
+            self.assertEqual((RETRIEVER.collection.metadata or {}).get("hnsw:space"), "cosine")
         policy = ask(AskRequest(query="What is the delivery fee below INR 149?"))
         general = ask(AskRequest(query="What is the weather today?"))
         self.assertIn("Based on the retrieved context:", policy.answer)
@@ -109,6 +111,14 @@ class ZeptoAcceptanceTests(unittest.TestCase):
         self.assertEqual(general.sources, [])
         self.assertEqual(general.confidence, 1.0)
         self.assertIn("only answer questions about Zepto policies", general.answer)
+        attempts = []
+        def invalid_then_valid(prompt: str) -> str:
+            attempts.append(prompt)
+            return "not-json" if len(attempts) < 3 else '{"answer":"ok","sources":[],"confidence":0.5}'
+        retried = generate_real_answer("test prompt", call_model=invalid_then_valid)
+        self.assertEqual(len(attempts), 3)
+        self.assertEqual(retried.answer, "ok")
+        self.assertEqual(retried.confidence, 0.5)
 
     def test_git_workflow_is_preserved(self) -> None:
         graph = run(["git", "log", "--graph", "--oneline", "--all"]).stdout

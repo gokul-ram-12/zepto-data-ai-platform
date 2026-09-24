@@ -10,6 +10,12 @@
 
 
 
+## Class balance
+
+The classification target balance is: not_survived: 549 (61.8%); survived: 340 (38.2%). Stratification preserves this distribution in both train and test splits so evaluation is not distorted by a changed class mix.
+
+
+
 ## Imbalance comparison
 
 | variant               |   precision |   recall |       f1 |

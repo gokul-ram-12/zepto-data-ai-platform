@@ -13,10 +13,10 @@ The service loads all eight policy files in `docs/`, embeds them with `all-MiniL
 
 **Ingestion:** `load_documents()` reads `doc_01.txt` through `doc_08.txt` and treats each document as one chunk.  
 **Embedding:** `Embedder.encode()` uses Sentence Transformers and the `all-MiniLM-L6-v2` model.  
-**Storage and retrieval:** `Retriever` upserts the vectors and documents into the persistent `zepto_policies` ChromaDB collection. `Retriever.search()` embeds the incoming query and retrieves the top three chunks by cosine similarity.  
-**Generation:** LangGraph's `classify_intent` node routes policy questions to `retrieve_and_answer` and unrelated questions to `direct_answer`. The mock path creates a deterministic answer from the top retrieved chunk or a fixed general-question response. The final FastAPI response is validated by the `AskResponse` Pydantic model.
+**Storage and retrieval:** `Retriever` upserts the vectors and documents into the persistent `zepto_policies` ChromaDB collection configured with `metadata={"hnsw:space": "cosine"}`. `Retriever.search()` embeds the incoming query and retrieves the top three chunks by cosine similarity.  
+**Generation:** LangGraph's `classify_intent` node routes policy questions to `retrieve_and_answer` and unrelated questions to `direct_answer`. The mock path creates a deterministic answer from the top retrieved chunk or a fixed general-question response. The optional real branch uses `generate_real_answer()`, validates raw JSON with `AskResponse`, and retries up to two additional times with a corrective instruction before returning a clearly marked error response. The final FastAPI response is validated by the `AskResponse` Pydantic model.
 
-Only generation branches on `MOCK_LLM`. Retrieval runs in both modes. With `MOCK_LLM` unset or set to `1`, no LLM network call occurs. `MOCK_LLM=0` is intentionally an explicit extension point that raises a clear configuration error until a real provider is supplied.
+Only generation branches on `MOCK_LLM`. Retrieval runs in both modes. With `MOCK_LLM` unset or set to `1`, no LLM network call occurs. `MOCK_LLM=0` calls the provider hook after retrieval and uses the structured prompt; if no provider is configured, the three-attempt validation path returns a clear error response without affecting the required offline baseline.
 
 ## Example calls
 
