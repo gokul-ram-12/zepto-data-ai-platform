@@ -1,70 +1,269 @@
 # Zepto Data & AI Platform
 
-This repository implements the three-module capstone: a scraped catalog data pipeline, a Titanic analytics/modeling pipeline, and an offline-first Zepto policy support assistant.
+> **One connected capstone submission** covering data engineering, analytics and machine learning, and a grounded GenAI support service.
 
-## Setup
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)](https://fastapi.tiangolo.com/)
+[![Tests](https://img.shields.io/badge/integration%20tests-5%20groups%20passing-brightgreen)](#automated-verification)
+[![License](https://img.shields.io/badge/services-no%20paid%20services-success)](#design-decisions)
 
-The project uses one consolidated `requirements.txt` at the repository root.
+This repository implements the three modules required by the Zepto AI/ML capstone in one public repository:
+
+1. **Data pipeline** — scrapes catalogue data, cleans it, converts GBP to INR, loads normalized SQLite tables, and demonstrates SQL plus pandas querying.
+2. **Analytics pipeline** — profiles and cleans the Titanic dataset, builds an EDA story, trains and evaluates classifiers, compares imbalance strategies, performs tuning, and completes a fare-regression side task.
+3. **Support assistant** — embeds eight Zepto policy documents locally, stores them in ChromaDB, routes questions through LangGraph, and exposes a validated FastAPI endpoint.
+
+## 📁 Repository layout
+
+```text
+zepto-data-ai-platform/
+├── README.md
+├── FINAL_SUBMISSION_SUMMARY.md
+├── requirements.txt
+├── docker-compose.yml
+├── data_pipeline/
+│   ├── pipeline.py
+│   ├── README.md
+│   └── artifacts/
+├── analytics/
+│   ├── analysis.py
+│   ├── titanic.csv
+│   ├── README.md
+│   └── artifacts/
+├── support_assistant/
+│   ├── main.py
+│   ├── Dockerfile
+│   ├── README.md
+│   └── docs/
+└── tests/
+    └── integration_test.py
+```
+
+## 🧰 Requirements
+
+- Python 3.11 or newer; Python 3.11 is recommended on Windows.
+- Internet access for the first data scrape, the first Titanic dataset fetch, and the first download of the local embedding model.
+- Docker Desktop with Docker Compose for the container test.
+- No paid API, LLM account, or API key is required for the graded baseline.
+
+## 🪟 Windows PowerShell setup
+
+Open PowerShell and run each command separately from the repository folder. Do not type the `>>` characters that PowerShell may show while it is waiting for a continuation line.
+
+```powershell
+cd "C:\Users\GOKUL\Downloads\vv\zepto-data-ai-platform"
+py -3.11 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -r requirements.txt
+```
+
+If Python 3.11 is not installed, use `python -m venv .venv` instead of `py -3.11 -m venv .venv`.
+
+Set the required deterministic support-assistant mode for the current PowerShell window:
+
+```powershell
+$env:MOCK_LLM = "1"
+```
+
+## 🐧 Linux/macOS setup
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -r requirements.txt
+export MOCK_LLM=1
 ```
 
-The analytics and support modules have deterministic fallbacks so their core outputs remain reproducible when external services are unavailable. The support assistant's graded path is `MOCK_LLM=1` or an unset variable.
+## 🧪 Automated verification
 
-## Run
+The rubric-driven integration suite checks repository structure, the SQLite schema and fixed conversion rate, SQL and pandas equivalence, Titanic reports and charts, Boolean-mask analysis, class-balance reporting, model reloadability, the eight-document corpus, prompt structure, cosine ChromaDB configuration, LangGraph routes, mock responses, real-mode validation retries, and Git merge history.
 
-```bash
-python data_pipeline/pipeline.py
-python analytics/analysis.py
-MOCK_LLM=1 python support_assistant/main.py
-```
+### Fast verification using existing artifacts
 
-To start the API:
+**Windows PowerShell:**
 
-```bash
-MOCK_LLM=1 uvicorn support_assistant.main:app --host 0.0.0.0 --port 7860
-curl -X POST http://localhost:7860/ask -H 'Content-Type: application/json' -d '{"query":"How much is delivery?"}'
-```
-
-## Automated verification
-
-The repository includes a rubric-driven integration suite at `tests/integration_test.py`. It checks the repository structure, SQLite schema and conversion rate, SQL and pandas outputs, Titanic data and reports, generated charts, reloadability of the complete model pipeline, all eight support documents, LangGraph routing, the FastAPI response contract, and the required Git merge history.
-
-Run the fast artifact and integration checks with:
-
-```bash
+```powershell
+$env:MOCK_LLM = "1"
 python tests/integration_test.py
 ```
 
-To regenerate all pipelines and then run the checks, use:
+**Linux/macOS:**
 
 ```bash
+MOCK_LLM=1 python tests/integration_test.py
+```
+
+### Full verification from source
+
+This is the strongest check. It regenerates all module outputs and then runs every integration test.
+
+**Windows PowerShell:**
+
+```powershell
+$env:MOCK_LLM = "1"
 python tests/integration_test.py --run-pipelines
 ```
 
-## Docker Compose
-
-The support assistant can be started with one command. Docker Compose builds the image, installs the dependencies from the consolidated requirements file, sets the graded offline `MOCK_LLM=1` mode, publishes port `7860`, and waits for the OpenAPI health check.
+**Linux/macOS:**
 
 ```bash
+MOCK_LLM=1 python tests/integration_test.py --run-pipelines
+```
+
+Expected final result:
+
+```text
+Ran 5 tests
+OK
+```
+
+The full run currently produces 100 scraped books, 889 cleaned Titanic rows, both support-assistant example responses, and five passing integration-test groups.
+
+## ▶️ Run each module manually
+
+### 1. Data pipeline
+
+```powershell
+python data_pipeline/pipeline.py
+```
+
+The pipeline scrapes the first five catalogue pages from Books to Scrape, producing 100 rows. It uses the required fixed conversion rate:
+
+> **1 GBP = 105.50 INR**
+
+Outputs include `data_pipeline/artifacts/books.db` and `data_pipeline/artifacts/query_results.md`.
+
+### 2. Analytics pipeline
+
+```powershell
+python analytics/analysis.py
+```
+
+The pipeline loads Seaborn's Titanic dataset once, saves `analytics/titanic.csv` as the offline fallback, creates EDA reports and charts, evaluates three classifiers, compares class-weight and SMOTE strategies, tunes Random Forest, completes fare regression, and saves a complete reloadable pipeline at `analytics/artifacts/best_pipeline.joblib`.
+
+### 3. Support assistant examples
+
+```powershell
+$env:MOCK_LLM = "1"
+$env:RUN_EXAMPLES = "1"
+python support_assistant/main.py
+```
+
+The example run demonstrates one policy question and one unrelated question without making an LLM API call.
+
+## 🚀 Run the FastAPI service directly
+
+Start the server in PowerShell 1:
+
+```powershell
+$env:MOCK_LLM = "1"
+python -m uvicorn support_assistant.main:app --host 0.0.0.0 --port 7860
+```
+
+Open Swagger UI in your browser:
+
+```text
+http://localhost:7860/docs
+```
+
+Open PowerShell 2 and test a policy question:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:7860/ask" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"query":"What is the delivery fee below INR 149?"}'
+```
+
+Expected behavior: the answer starts with `Based on the retrieved context:`, `sources` contains document IDs, and `confidence` is `1`.
+
+Test an unrelated question:
+
+```powershell
+Invoke-RestMethod `
+  -Uri "http://localhost:7860/ask" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body '{"query":"What is the weather today?"}'
+```
+
+Expected response:
+
+```json
+{
+  "answer": "I can only answer questions about Zepto policies right now.",
+  "sources": [],
+  "confidence": 1.0
+}
+```
+
+Stop the direct server with `Ctrl+C`.
+
+## 🐳 Run with Docker Compose
+
+Install Docker Desktop for Windows from the [official Docker documentation](https://docs.docker.com/desktop/setup/install/windows-install/). Start Docker Desktop and wait until it reports that Docker is running.
+
+Verify Docker in PowerShell:
+
+```powershell
+docker --version
+docker compose version
+docker run --rm hello-world
+```
+
+From the repository folder, build and start the service:
+
+```powershell
 docker compose up --build
 ```
 
-The API is then available at `http://localhost:7860/ask`. Stop it with `Ctrl+C`, or run `docker compose down` in another terminal.
+Compose builds the support-assistant image, installs the consolidated requirements, enables `MOCK_LLM=1`, publishes port `7860`, and uses an OpenAPI health check. Open:
 
-See the module READMEs for the generated outputs, example calls, and implementation decisions.
+```text
+http://localhost:7860/docs
+```
 
-## Design decisions
+Test the endpoint from a second PowerShell window using the same `Invoke-RestMethod` commands above. Stop and remove the container with:
 
-The data pipeline uses requests and BeautifulSoup for reproducible scraping, a fixed project-defined GBP/INR rate, and a normalized SQLite schema with categories and books tables. The analytics pipeline preserves one cleaned Titanic dataset across EDA, classification, imbalance analysis, tuning, and regression. The support assistant uses local embeddings and ChromaDB retrieval, while LangGraph routes policy and general questions; mock generation is deterministic and requires no paid service or API key.
+```powershell
+Ctrl+C
+docker compose down
+```
+
+## 🧠 Design decisions
+
+**Data engineering:** The catalogue pipeline uses `requests` and BeautifulSoup against the public Books to Scrape practice site. It uses a fixed, keyless project rate of 105.50 INR per GBP, median-imputes numeric parsing failures, and stores categories and books in a normalized SQLite schema connected by a foreign key.
+
+**Analytics:** The Titanic dataset is loaded once and carried through a single cleaned DataFrame. EDA uses threshold-based missing-value decisions, IQR outlier analysis, Boolean-mask survival checks, an exact six-column correlation matrix, four interpreted story charts, and an EDA-only standardization check. Modeling uses a stratified split followed by training-only preprocessing in scikit-learn pipelines, then evaluates Logistic Regression, Decision Tree, and Random Forest with the requested metrics.
+
+**Support assistant:** Ingestion is handled by `load_documents()`, embedding by `Embedder.encode()` with `all-MiniLM-L6-v2`, storage and cosine retrieval by the `zepto_policies` ChromaDB collection, routing by LangGraph's `StateGraph`, and generation by `retrieve_and_answer` or `direct_answer`. The default `MOCK_LLM=1` path is deterministic and offline. The optional real branch uses the structured prompt and validates output with Pydantic, retrying twice with corrective instructions when validation fails.
+
+## ✅ Submission explanation
+
+This project is one connected Zepto Data & AI Platform. First, the data pipeline collects and organizes catalogue data into a relational database. Next, the analytics pipeline uses one cleaned Titanic dataset to demonstrate profiling, visualization, classification, imbalance handling, tuning, and regression. Finally, the support assistant turns Zepto policy documents into a searchable local knowledge base and exposes grounded answers through FastAPI. The project includes automated verification, Docker Compose support, generated artifacts, and a documented Git feature-branch workflow.
+
+Submit exactly one public repository link:
+
+<https://github.com/gokul-ram-12/zepto-data-ai-platform>
+
+## 📚 Key files
+
+- [Final submission summary](FINAL_SUBMISSION_SUMMARY.md)
+- [Integration test suite](tests/integration_test.py)
+- [Docker Compose configuration](docker-compose.yml)
+- [Data pipeline documentation](data_pipeline/README.md)
+- [Analytics documentation](analytics/README.md)
+- [Support assistant documentation](support_assistant/README.md)
+- [Verification record](VERIFICATION.md)
 
 ## References
 
-[1]: http://books.toscrape.com "Books to Scrape public scraping-practice site"
-[2]: https://seaborn.pydata.org/generated/seaborn.load_dataset.html "Seaborn dataset loader"
-[3]: https://scikit-learn.org/stable/ "Scikit-learn documentation"
-[4]: https://python.langchain.com/docs/langgraph/ "LangGraph documentation"
-[5]: https://fastapi.tiangolo.com/ "FastAPI documentation"
+- [Books to Scrape](http://books.toscrape.com)
+- [Seaborn dataset loader](https://seaborn.pydata.org/generated/seaborn.load_dataset.html)
+- [Scikit-learn](https://scikit-learn.org/stable/)
+- [LangGraph](https://python.langchain.com/docs/langgraph/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/)
